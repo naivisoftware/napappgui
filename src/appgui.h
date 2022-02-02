@@ -37,19 +37,18 @@ namespace nap
         void draw(double deltaTime);
 
         // properties
-        std::vector<ResourcePtr<AppGUIMenuItems>> mWidgetGroups;
-        std::string mMenuName = "Windows";
+        std::vector<ResourcePtr<AppGUIWindowGroup>> mWindowGroups;
     protected:
     private:
-        bool extractWindowsRecursive(AppGUIMenuItems* items, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
+        bool extractWindowsRecursive(AppGUIWindowGroup* items, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
 
-        void handleWidgetGroup(AppGUIMenuItems* mWidgetGroup);
+        void handleWidgetGroup(AppGUIWindowGroup* mWidgetGroup);
 
-        void handleWindowWidget(AppGuiWindow* mWidget);
+        void handleWindowWidget(AppGUIWindow* mWidget);
 
         std::vector<std::string> getOpenWindowIDs();
 
-        std::unordered_map<AppGuiWindow*, bool> mOpenWindows;
+        std::unordered_map<AppGUIWindow*, bool> mOpenWindows;
 
         AppGUIService& mAppGUIService;
     };

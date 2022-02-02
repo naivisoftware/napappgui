@@ -11,22 +11,22 @@ namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
 
-    class NAPAPI AppGuiWidget : public AppGUIItem
+    class NAPAPI AppGUIWidget : public AppGUIItem
     {
         RTTI_ENABLE(AppGUIItem)
     public:
-        virtual ~AppGuiWidget(){};
+        virtual ~AppGUIWidget(){};
 
         void draw(double deltaTime);
     protected:
         virtual void drawContent(double deltaTime) = 0;
     };
 
-    class NAPAPI AppGuiWindow : public AppGUIMenuItem
+    class NAPAPI AppGUIWindow : public AppGUIMenuItem
     {
         RTTI_ENABLE(AppGUIMenuItem)
     public:
-        virtual ~AppGuiWindow(){};
+        virtual ~AppGUIWindow(){};
 
         void draw(double deltaTime);
 
@@ -36,11 +36,11 @@ namespace nap
         virtual void drawContent(double deltaTime) = 0;
     };
 
-    class NAPAPI AppGUIMenuItems : public AppGUIMenuItem
+    class NAPAPI AppGUIWindowGroup : public AppGUIMenuItem
     {
         RTTI_ENABLE(AppGUIMenuItem)
     public:
-        virtual ~AppGUIMenuItems(){};
+        virtual ~AppGUIWindowGroup(){};
 
         // properties
         std::vector<ResourcePtr<AppGUIMenuItem>> mItems;
