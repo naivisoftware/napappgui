@@ -166,5 +166,6 @@ namespace nap
     void AppGUIService::registerObjectCreators(rtti::Factory &factory)
     {
         factory.addObjectCreator(std::make_unique<AppGUIObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<AppGUIWindowGroupObjectCreator>(*this));
     }
 }

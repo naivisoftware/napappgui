@@ -3,6 +3,7 @@
 // External Includes
 #include <nap/resource.h>
 #include <nap/resourceptr.h>
+#include <rtti/factory.h>
 
 // Local Includes
 #include "appguiitem.h"
@@ -10,12 +11,15 @@
 namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
+    class AppGUIService;
 
     class NAPAPI AppGUIWidget : public AppGUIItem
     {
         RTTI_ENABLE(AppGUIItem)
     public:
-        virtual ~AppGUIWidget(){};
+        AppGUIWidget(AppGUIService& service);
+
+        virtual ~AppGUIWidget() = default;
 
         void draw(double deltaTime);
     protected:
@@ -26,7 +30,9 @@ namespace nap
     {
         RTTI_ENABLE(AppGUIMenuItem)
     public:
-        virtual ~AppGUIWindow(){};
+        AppGUIWindow(AppGUIService& service);
+
+        virtual ~AppGUIWindow() = default;
 
         void draw(double deltaTime);
 
@@ -40,10 +46,14 @@ namespace nap
     {
         RTTI_ENABLE(AppGUIMenuItem)
     public:
-        virtual ~AppGUIWindowGroup(){};
+        AppGUIWindowGroup(AppGUIService& service);
+
+        virtual ~AppGUIWindowGroup() = default;
 
         // properties
         std::vector<ResourcePtr<AppGUIMenuItem>> mItems;
         std::string mName;
     };
+
+    using AppGUIWindowGroupObjectCreator = rtti::ObjectCreator<AppGUIWindowGroup, AppGUIService>;
 }
