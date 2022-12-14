@@ -5,6 +5,11 @@
 
 #include <imgui/imgui.h>
 
+RTTI_BEGIN_CLASS(nap::AppGUIMenuItemGroup)
+    RTTI_PROPERTY(nap::group::members,	&nap::AppGUIMenuItemGroup::mMembers,	nap::rtti::EPropertyMetaData::Embedded | nap::rtti::EPropertyMetaData::ReadOnly)
+    RTTI_PROPERTY(nap::group::children,	&nap::AppGUIMenuItemGroup::mChildren,	nap::rtti::EPropertyMetaData::Embedded | nap::rtti::EPropertyMetaData::ReadOnly)
+RTTI_END_CLASS
+
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWidget)
 RTTI_END_CLASS
 
@@ -12,22 +17,11 @@ RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWindow)
     RTTI_PROPERTY("Name", &nap::AppGUIWindow::mName, nap::rtti::EPropertyMetaData::Default)
 RTTI_END_CLASS
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWindowGroup)
-    RTTI_CONSTRUCTOR(nap::AppGUIService&)
-    RTTI_PROPERTY("Items", &nap::AppGUIWindowGroup::mItems, nap::rtti::EPropertyMetaData::Embedded)
-    RTTI_PROPERTY("Name", &nap::AppGUIWindowGroup::mName, nap::rtti::EPropertyMetaData::Default)
-RTTI_END_CLASS
-
 namespace nap
 {
-    AppGUIWidget::AppGUIWidget(AppGUIService &service) : AppGUIItem(service){}
-
-
-    AppGUIWindow::AppGUIWindow(AppGUIService &service) : AppGUIMenuItem(service){}
-
-
-    AppGUIWindowGroup::AppGUIWindowGroup(AppGUIService& service) : AppGUIMenuItem(service){}
-
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUIWidget
+    //////////////////////////////////////////////////////////////////////////
 
     void AppGUIWidget::draw(double deltaTime)
     {
@@ -36,6 +30,9 @@ namespace nap
         ImGui::PopID();
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUIWindow
+    //////////////////////////////////////////////////////////////////////////
 
     void AppGUIWindow::draw(double deltaTime)
     {

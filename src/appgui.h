@@ -14,35 +14,48 @@ namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
     class AppGUIService;
+    class AppGUIComponentInstance;
 
-    /**
-     * The EgoGUI draws all widgets inside an EgoGUIWidgetGroup.
-     * Draw needs to be called manually.
-     */
-    class NAPAPI AppGUI : public Resource
+    class NAPAPI AppGUIComponent : public Component
+    {
+        friend class AppGUIComponentInstance;
+
+        RTTI_ENABLE(Component)
+        DECLARE_COMPONENT(AppGUIComponent, AppGUIComponentInstance)
+    public:
+        AppGUIComponent(AppGUIService& appGUIService);
+
+        ~AppGUIComponent() = default;
+
+        // properties
+        ResourcePtr<AppGUIMenuItemGroup> mMenuItems;
+    private:
+        AppGUIService& mAppGUIService;
+    };
+
+
+    class NAPAPI AppGUIComponentInstance : public ComponentInstance
     {
         friend class AppGUICache;
         friend class AppGUIService;
-
-        RTTI_ENABLE(Resource)
+    RTTI_ENABLE(ComponentInstance)
     public:
-        AppGUI(AppGUIService& appGUIService);
+        AppGUIComponentInstance(EntityInstance& entity, Component& resource)
+            : nap::ComponentInstance(entity, resource) { }
 
-        ~AppGUI() = default;
+        virtual ~AppGUIComponentInstance() = default;
 
-        virtual bool init(utility::ErrorState& errorState) override;
+        // Initialize the component
+        bool init(utility::ErrorState& errorState) override;
 
-        virtual void onDestroy() override;
-
+        void onDestroy() override;
+    private:
+        // Draws GUI, called from AppGUIService
         void draw(double deltaTime);
 
-        // properties
-        std::vector<ResourcePtr<AppGUIWindowGroup>> mWindowGroups;
-    protected:
-    private:
-        bool extractWindowsRecursive(AppGUIWindowGroup* items, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
+        bool constructMenuRecursive(AppGUIMenuItemGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
 
-        void handleWidgetGroup(AppGUIWindowGroup* mWidgetGroup);
+        void handleWidgetGroup(AppGUIMenuItemGroup* group);
 
         void handleWindowWidget(AppGUIWindow* mWidget);
 
@@ -50,16 +63,15 @@ namespace nap
 
         std::unordered_map<AppGUIWindow*, bool> mOpenWindows;
 
-        AppGUIService& mAppGUIService;
+        AppGUIService* mAppGUIService;
     };
-
 
     class NAPAPI AppGUICache : public Resource
     {
         RTTI_ENABLE(Resource)
     public:
         AppGUICache() = default;
-        AppGUICache(AppGUI& gui);
+        AppGUICache(AppGUIComponentInstance& gui);
 
         ~AppGUICache() = default;
 
@@ -68,5 +80,5 @@ namespace nap
         std::vector<std::string> mOpenWidgets;
     };
 
-    using AppGUIObjectCreator = rtti::ObjectCreator<AppGUI, AppGUIService>;
+    using AppGUIComponentObjectCreator = rtti::ObjectCreator<AppGUIComponent, AppGUIService>;
 }

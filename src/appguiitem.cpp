@@ -1,10 +1,21 @@
 
 // local includes
 #include "appguiitem.h"
-
+#include "appguiservice.h"
 namespace nap
 {
-    AppGUIItem::AppGUIItem(AppGUIService& service) : mAppGUIService(service){}
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUIItem
+    //////////////////////////////////////////////////////////////////////////
 
-    AppGUIMenuItem::AppGUIMenuItem(AppGUIService& service) : AppGUIItem(service){}
+    void AppGUIItem::setAppGUIService(AppGUIService& service)
+    {
+        mService = &service;
+    }
+
+
+    AppGUIService& AppGUIItem::getAppGUIService() const
+    {
+        return *mService;
+    }
 }

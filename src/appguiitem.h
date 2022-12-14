@@ -10,15 +10,23 @@ namespace nap
     {
         RTTI_ENABLE(Resource)
     public:
-        AppGUIItem(AppGUIService& service);
+        // default constructor & destructor
+        AppGUIItem() = default;
+        virtual ~AppGUIItem() = default;
 
-        AppGUIService& mAppGUIService;
+        virtual void setAppGUIService(AppGUIService& service);
+
+        AppGUIService& getAppGUIService() const;
+    protected:
+        AppGUIService* mService;
     };
 
     class NAPAPI AppGUIMenuItem : public AppGUIItem
     {
         RTTI_ENABLE(AppGUIItem)
     public:
-        AppGUIMenuItem(AppGUIService& service);
+        // default constructor & destructor
+        AppGUIMenuItem() = default;
+        virtual ~AppGUIMenuItem() = default;
     };
 }

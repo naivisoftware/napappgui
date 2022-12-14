@@ -7,82 +7,90 @@
 #include <entity.h>
 #include <imgui/imgui.h>
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUI)
-        RTTI_PROPERTY("Widget Groups", &nap::AppGUI::mWindowGroups, nap::rtti::EPropertyMetaData::Required)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIComponent)
+    RTTI_PROPERTY("Menu Items", &nap::AppGUIComponent::mMenuItems, nap::rtti::EPropertyMetaData::Default)
+RTTI_END_CLASS
+
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIComponentInstance)
+    RTTI_CONSTRUCTOR(nap::EntityInstance&, nap::Component&)
 RTTI_END_CLASS
 
 RTTI_BEGIN_CLASS(nap::AppGUICache)
-        RTTI_PROPERTY("OpenWidgets", &nap::AppGUICache::mOpenWidgets, nap::rtti::EPropertyMetaData::Embedded)
+    RTTI_PROPERTY("OpenWidgets", &nap::AppGUICache::mOpenWidgets, nap::rtti::EPropertyMetaData::Embedded)
 RTTI_END_CLASS
 
 
 namespace nap
 {
-    AppGUI::AppGUI(AppGUIService& appGUIService) : mAppGUIService(appGUIService){}
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUIComponent
+    //////////////////////////////////////////////////////////////////////////
 
-    bool AppGUI::init(utility::ErrorState &errorState)
+    AppGUIComponent::AppGUIComponent(AppGUIService& appGUIService) : mAppGUIService(appGUIService){}
+
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUIComponentInstance
+    //////////////////////////////////////////////////////////////////////////
+
+    bool AppGUIComponentInstance::init(utility::ErrorState &errorState)
     {
-        std::vector<std::string> group_ids;
-        for(auto& group : mWindowGroups)
-        {
-            if(!extractWindowsRecursive(group.get(), group_ids, errorState))
-                return false;
-        }
+        // get resource
+        auto* resource = getComponent<AppGUIComponent>();
 
-        mAppGUIService.registerAppGUI(this);
+        // set app gui service pointer
+        mAppGUIService = &resource->mAppGUIService;
+
+        std::vector<std::string> group_ids;
+        if(!constructMenuRecursive(resource->mMenuItems.get(), group_ids, errorState))
+            return false;
+
+        mAppGUIService->registerAppGUIComponentInstance(this);
 
         return true;
     }
 
 
-    bool AppGUI::extractWindowsRecursive(AppGUIWindowGroup* items, std::vector<std::string>& group_ids, utility::ErrorState &errorState)
+    bool AppGUIComponentInstance::constructMenuRecursive(AppGUIMenuItemGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState)
     {
-        for(auto& item : items->mItems)
+        for(auto& member : group->mMembers)
         {
-            if(item.get()->get_type().is_derived_from<AppGUIWindow>())
+            if(member.get()->get_type().is_derived_from<AppGUIWindow>())
             {
-                auto* window_widget = static_cast<AppGUIWindow*>(item.get());
+                // set appgui service
+                member->setAppGUIService(*mAppGUIService);
+
+                auto *window_widget = static_cast<AppGUIWindow *>(member.get());
                 auto open_windows_it = mOpenWindows.find(window_widget);
-                if(!errorState.check(open_windows_it==mOpenWindows.end(),
-                                     "duplicate window %s assigned in AppGUI, check AppGUI configuration",
-                                     window_widget->mID.c_str()))
+                if (!errorState.check(open_windows_it == mOpenWindows.end(),
+                                      "duplicate window %s assigned in AppGUI, check AppGUI configuration",
+                                      window_widget->mID.c_str()))
                     return false;
 
                 mOpenWindows.emplace(window_widget, false);
-            }else if(item.get()->get_type().is_derived_from<AppGUIWindowGroup>())
-            {
-                auto* group_item = static_cast<AppGUIWindowGroup*>(item.get());
-
-                auto group_ids_it = std::find(group_ids.begin(), group_ids.end(), group_item->mID);
-                if(!errorState.check(group_ids_it==group_ids.end(),
-                                     "recursive group %s found, check AppGUI configuration",
-                                     group_item->mID.c_str()))
-                    return false;
-
-                group_ids.emplace_back(group_item->mID);
-                if(!extractWindowsRecursive(group_item, group_ids, errorState))
-                    return false;
             }
+        }
+        for(auto& child : group->mChildren)
+        {
+            if(!constructMenuRecursive(child.get(), group_ids, errorState))
+                return false;
         }
 
         return true;
     }
 
 
-    void AppGUI::onDestroy()
+    void AppGUIComponentInstance::onDestroy()
     {
-        mAppGUIService.unregisterAppGUI(this);
+        mAppGUIService->unregisterAppGUIComponentInstance(this);
     }
 
 
-    void AppGUI::draw(double deltaTime)
+    void AppGUIComponentInstance::draw(double deltaTime)
     {
         ImGui::PushID(mID.c_str());
         ImGui::BeginMainMenuBar();
-        for(auto& group : mWindowGroups)
-        {
-            handleWidgetGroup(group.get());
-        }
+        auto* resource = getComponent<AppGUIComponent>();
+        handleWidgetGroup(resource->mMenuItems.get());
         ImGui::EndMainMenuBar();
 
         for(auto& pair : mOpenWindows)
@@ -94,20 +102,21 @@ namespace nap
     }
 
 
-    void AppGUI::handleWidgetGroup(AppGUIWindowGroup* mWidgetGroup)
+    void AppGUIComponentInstance::handleWidgetGroup(AppGUIMenuItemGroup* group)
     {
-        ImGui::PushID(mWidgetGroup->mID.c_str());
-        if (ImGui::BeginMenu(mWidgetGroup->mName.c_str()))
+        ImGui::PushID(group->mID.c_str());
+        if (ImGui::BeginMenu(group->mID.c_str()))
         {
-            for(auto& item : mWidgetGroup->mItems)
+            for(auto& member : group->mMembers)
             {
-                if(item.get()->get_type().is_derived_from<AppGUIWindow>())
+                if(member->get_type().is_derived_from<AppGUIWindow>())
                 {
-                    handleWindowWidget(static_cast<AppGUIWindow*>(item.get()));
-                }else if(item.get()->get_type().is_derived_from<AppGUIWindowGroup>())
-                {
-                    handleWidgetGroup(static_cast<AppGUIWindowGroup*>(item.get()));
+                    handleWindowWidget(static_cast<AppGUIWindow *>(member.get()));
                 }
+            }
+            for(auto& child : group->mChildren)
+            {
+                handleWidgetGroup(child.get());
             }
             ImGui::EndMenu();
         }
@@ -115,13 +124,13 @@ namespace nap
     }
 
 
-    void AppGUI::handleWindowWidget(AppGUIWindow* mWidget)
+    void AppGUIComponentInstance::handleWindowWidget(AppGUIWindow* mWidget)
     {
         ImGui::MenuItem(mWidget->mName.c_str(), nullptr, &mOpenWindows[mWidget]);
     }
 
 
-    std::vector<std::string> AppGUI::getOpenWindowIDs()
+    std::vector<std::string> AppGUIComponentInstance::getOpenWindowIDs()
     {
         std::vector<std::string> ids;
         for(auto& pair : mOpenWindows)
@@ -132,8 +141,11 @@ namespace nap
         return ids;
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // AppGUICache
+    //////////////////////////////////////////////////////////////////////////
 
-    AppGUICache::AppGUICache(AppGUI &gui)
+    AppGUICache::AppGUICache(AppGUIComponentInstance &gui)
     {
         mID = gui.mID;
 

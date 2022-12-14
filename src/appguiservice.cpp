@@ -14,6 +14,7 @@
 #include <nap/core.h>
 #include <rtti/jsonwriter.h>
 #include <rtti/jsonreader.h>
+#include <imguiservice.h>
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIService)
         RTTI_CONSTRUCTOR(nap::ServiceConfiguration*)
@@ -37,11 +38,16 @@ namespace nap
 
     void AppGUIService::update(double deltaTime)
     {
+        for(auto* gui : mGUIs)
+        {
+            gui->draw(deltaTime);
+        }
     }
 
 
     void AppGUIService::getDependentServices(std::vector<rtti::TypeInfo>& dependencies)
     {
+        dependencies.emplace_back(RTTI_OF(IMGuiService));
     }
 
 
@@ -128,9 +134,9 @@ namespace nap
     }
 
 
-    void AppGUIService::registerAppGUI(AppGUI* appGUI)
+    void AppGUIService::registerAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
     {
-        mGUIs.emplace_back(appGUI);
+        mGUIs.emplace_back(appGUIComponentInstance);
 
         // Find cache associated with given appGUI
         for (const auto& object : mCache)
@@ -140,9 +146,9 @@ namespace nap
                 continue;
 
             auto* cache = static_cast<AppGUICache*>(object.get());
-            if (appGUI->mID == cache->mID)
+            if (appGUIComponentInstance->mID == cache->mID)
             {
-                for(auto& pair : appGUI->mOpenWindows)
+                for(auto& pair : appGUIComponentInstance->mOpenWindows)
                 {
                     auto open_windows_it = std::find(cache->mOpenWidgets.begin(), cache->mOpenWidgets.end(), pair.first->mID);
                     if(open_windows_it!=cache->mOpenWidgets.end())
@@ -153,9 +159,9 @@ namespace nap
     }
 
 
-    void AppGUIService::unregisterAppGUI(AppGUI* appGUI)
+    void AppGUIService::unregisterAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
     {
-        auto it = std::find(mGUIs.begin(), mGUIs.end(), appGUI);
+        auto it = std::find(mGUIs.begin(), mGUIs.end(), appGUIComponentInstance);
         if(it != mGUIs.end())
         {
             mGUIs.erase(it);
@@ -165,7 +171,6 @@ namespace nap
 
     void AppGUIService::registerObjectCreators(rtti::Factory &factory)
     {
-        factory.addObjectCreator(std::make_unique<AppGUIObjectCreator>(*this));
-        factory.addObjectCreator(std::make_unique<AppGUIWindowGroupObjectCreator>(*this));
+        factory.addObjectCreator(std::make_unique<AppGUIComponentObjectCreator>(*this));
     }
 }
