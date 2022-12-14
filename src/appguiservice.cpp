@@ -1,5 +1,6 @@
 // Local Includes
 #include "appguiservice.h"
+#include "appguicomponent.h"
 #include "appguiwindowmenucomponent.h"
 
 // External Includes
@@ -73,13 +74,19 @@ namespace nap
         caches.reserve(mGUIs.size());
         resources.reserve(mGUIs.size());
 
-        for (auto& gui : mGUIs)
+        for (auto* gui : mGUIs)
         {
-            // Create cache
-            auto new_cache = std::make_unique<AppGUICache>(*gui);
+            if(gui->get_type().is_derived_from<AppGUIWindowMenuComponentInstance>())
+            {
+                auto* window_menu = static_cast<AppGUIWindowMenuComponentInstance*>(gui);
 
-            resources.emplace_back(new_cache.get());
-            caches.emplace_back(std::move(new_cache));
+                // Create cache
+                auto new_cache = std::make_unique<AppGUICache>(*window_menu);
+
+                resources.emplace_back(new_cache.get());
+                caches.emplace_back(std::move(new_cache));
+            }
+
         }
 
         // Serialize current set of parameters to json
@@ -136,7 +143,7 @@ namespace nap
     }
 
 
-    void AppGUIService::registerAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance *appGUIComponentInstance)
+    void AppGUIService::registerAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
     {
         mGUIs.emplace_back(appGUIComponentInstance);
 
@@ -150,18 +157,22 @@ namespace nap
             auto* cache = static_cast<AppGUICache*>(object.get());
             if (appGUIComponentInstance->mID == cache->mID)
             {
-                for(auto& pair : appGUIComponentInstance->mOpenWindows)
+                if(appGUIComponentInstance->get_type().is_derived_from<AppGUIWindowMenuComponentInstance>())
                 {
-                    auto open_windows_it = std::find(cache->mOpenWidgets.begin(), cache->mOpenWidgets.end(), pair.first->mID);
-                    if(open_windows_it!=cache->mOpenWidgets.end())
-                        pair.second = true;
+                    auto* window_menu = static_cast<AppGUIWindowMenuComponentInstance*>(appGUIComponentInstance);
+                    for(auto& pair : window_menu->mOpenWindows)
+                    {
+                        auto open_windows_it = std::find(cache->mOpenWidgets.begin(), cache->mOpenWidgets.end(), pair.first->mID);
+                        if(open_windows_it!=cache->mOpenWidgets.end())
+                            pair.second = true;
+                    }
                 }
             }
         }
     }
 
 
-    void AppGUIService::unregisterAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance *appGUIComponentInstance)
+    void AppGUIService::unregisterAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
     {
         auto it = std::find(mGUIs.begin(), mGUIs.end(), appGUIComponentInstance);
         if(it != mGUIs.end())

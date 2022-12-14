@@ -6,6 +6,7 @@
 // nap includes
 #include <entity.h>
 #include <imgui/imgui.h>
+#include <nap/logger.h>
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWindowMenuComponent)
     RTTI_PROPERTY("Menu Items", &nap::AppGUIWindowMenuComponent::mWindowGroups, nap::rtti::EPropertyMetaData::Default)
@@ -26,19 +27,21 @@ namespace nap
     // AppGUIWindowMenuComponent
     //////////////////////////////////////////////////////////////////////////
 
-    AppGUIWindowMenuComponent::AppGUIWindowMenuComponent(AppGUIService& appGUIService) : mAppGUIService(appGUIService){}
+    AppGUIWindowMenuComponent::AppGUIWindowMenuComponent(AppGUIService& appGUIService)
+        : AppGUIComponent(appGUIService){}
 
     //////////////////////////////////////////////////////////////////////////
     // AppGUIWindowMenuComponentInstance
     //////////////////////////////////////////////////////////////////////////
 
-    bool AppGUIWindowMenuComponentInstance::init(utility::ErrorState &errorState)
+    AppGUIWindowMenuComponentInstance::AppGUIWindowMenuComponentInstance(EntityInstance& entity, Component& resource)
+        : AppGUIComponentInstance(entity, resource){}
+
+
+    bool AppGUIWindowMenuComponentInstance::initInternal(utility::ErrorState &errorState)
     {
         // get resource
         auto* resource = getComponent<AppGUIWindowMenuComponent>();
-
-        // set app gui service pointer
-        mAppGUIService = &resource->mAppGUIService;
 
         std::vector<std::string> group_ids;
         for(auto& menu_item : resource->mWindowGroups)
@@ -46,8 +49,6 @@ namespace nap
             if(!constructMenuRecursive(menu_item.get(), group_ids, errorState))
                 return false;
         }
-
-        mAppGUIService->registerAppGUIWindowMenuComponentInstance(this);
 
         return true;
     }
@@ -57,10 +58,11 @@ namespace nap
     {
         for(auto& member : group->mMembers)
         {
-            if(member.get()->get_type().is_derived_from<AppGUIWindow>())
+            if(member->get_type().is_derived_from<AppGUIWindow>())
             {
-                // set appgui service
-                member->setAppGUIService(*mAppGUIService);
+                // setup app gui item
+                if(!member->setup(*mAppGUIService, *this, errorState))
+                    return false;
 
                 auto *window_widget = static_cast<AppGUIWindow *>(member.get());
                 auto open_windows_it = mOpenWindows.find(window_widget);
@@ -82,9 +84,8 @@ namespace nap
     }
 
 
-    void AppGUIWindowMenuComponentInstance::onDestroy()
+    void AppGUIWindowMenuComponentInstance::onDestroyInternal()
     {
-        mAppGUIService->unregisterAppGUIWindowMenuComponentInstance(this);
     }
 
 

@@ -3,6 +3,7 @@
 // Internal Includes
 #include "appguiwidget.h"
 #include "appguiwindow.h"
+#include "appguicomponent.h"
 
 // External Includes
 #include <component.h>
@@ -18,11 +19,11 @@ namespace nap
     class AppGUIService;
     class AppGUIWindowMenuComponentInstance;
 
-    class NAPAPI AppGUIWindowMenuComponent : public Component
+    class NAPAPI AppGUIWindowMenuComponent : public AppGUIComponent
     {
         friend class AppGUIWindowMenuComponentInstance;
 
-        RTTI_ENABLE(Component)
+        RTTI_ENABLE(AppGUIComponent)
         DECLARE_COMPONENT(AppGUIWindowMenuComponent, AppGUIWindowMenuComponentInstance)
     public:
         AppGUIWindowMenuComponent(AppGUIService& appGUIService);
@@ -31,30 +32,27 @@ namespace nap
 
         // properties
         std::vector<ResourcePtr<AppGUIWindowGroup>> mWindowGroups;
-    private:
-        AppGUIService& mAppGUIService;
     };
 
 
-    class NAPAPI AppGUIWindowMenuComponentInstance : public ComponentInstance
+    class NAPAPI AppGUIWindowMenuComponentInstance : public AppGUIComponentInstance
     {
         friend class AppGUICache;
         friend class AppGUIService;
-    RTTI_ENABLE(ComponentInstance)
+        RTTI_ENABLE(ComponentInstance)
     public:
-        AppGUIWindowMenuComponentInstance(EntityInstance& entity, Component& resource)
-            : nap::ComponentInstance(entity, resource) { }
+        AppGUIWindowMenuComponentInstance(EntityInstance& entity, Component& resource);
 
         virtual ~AppGUIWindowMenuComponentInstance() = default;
 
-        // Initialize the component
-        bool init(utility::ErrorState& errorState) override;
-
-        void onDestroy() override;
-    private:
         // Draws GUI, called from AppGUIService
-        void draw(double deltaTime);
+        void draw(double deltaTime) override;
+    protected:
+        // Initialize the component
+        bool initInternal(utility::ErrorState& errorState) override;
 
+        void onDestroyInternal() override;
+    private:
         bool constructMenuRecursive(AppGUIWindowGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
 
         void handleWindowGroup(AppGUIWindowGroup* group);
@@ -64,8 +62,6 @@ namespace nap
         std::vector<std::string> getOpenWindowIDs();
 
         std::unordered_map<AppGUIWindow*, bool> mOpenWindows;
-
-        AppGUIService* mAppGUIService;
     };
 
     class NAPAPI AppGUICache : public Resource

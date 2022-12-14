@@ -7,7 +7,7 @@ namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
     // forward declares
-    class AppGUIWindowMenuComponentInstance;
+    class AppGUIComponentInstance;
 
     class NAPAPI AppGUIService : public Service
     {
@@ -59,13 +59,13 @@ namespace nap
          */
         bool loadIni(const std::string& path, utility::ErrorState error);
 
-        void registerAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance* appGUIComponentInstance);
+        void registerAppGUIComponentInstance(AppGUIComponentInstance* appGUIComponentInstance);
 
-        void unregisterAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance* appGUIComponentInstance);
+        void unregisterAppGUIComponentInstance(AppGUIComponentInstance* appGUIComponentInstance);
     protected:
         void registerObjectCreators(rtti::Factory &factory) override;
 
-        std::vector<AppGUIWindowMenuComponentInstance*> mGUIs;
+        std::vector<AppGUIComponentInstance*> mGUIs;
 
         // Cache read from ini file, contains saved settings
         std::vector<std::unique_ptr<rtti::Object>> mCache;
