@@ -1,6 +1,6 @@
 // Local Includes
 #include "appguiservice.h"
-#include "appgui.h"
+#include "appguiwindowmenucomponent.h"
 
 // External Includes
 #include <iostream>
@@ -15,9 +15,10 @@
 #include <rtti/jsonwriter.h>
 #include <rtti/jsonreader.h>
 #include <imguiservice.h>
+#include <sceneservice.h>
 
 RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIService)
-        RTTI_CONSTRUCTOR(nap::ServiceConfiguration*)
+    RTTI_CONSTRUCTOR(nap::ServiceConfiguration*)
 RTTI_END_CLASS
 
 namespace nap
@@ -48,6 +49,7 @@ namespace nap
     void AppGUIService::getDependentServices(std::vector<rtti::TypeInfo>& dependencies)
     {
         dependencies.emplace_back(RTTI_OF(IMGuiService));
+        dependencies.emplace_back(RTTI_OF(SceneService));
     }
 
 
@@ -134,7 +136,7 @@ namespace nap
     }
 
 
-    void AppGUIService::registerAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
+    void AppGUIService::registerAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance *appGUIComponentInstance)
     {
         mGUIs.emplace_back(appGUIComponentInstance);
 
@@ -159,7 +161,7 @@ namespace nap
     }
 
 
-    void AppGUIService::unregisterAppGUIComponentInstance(AppGUIComponentInstance *appGUIComponentInstance)
+    void AppGUIService::unregisterAppGUIWindowMenuComponentInstance(AppGUIWindowMenuComponentInstance *appGUIComponentInstance)
     {
         auto it = std::find(mGUIs.begin(), mGUIs.end(), appGUIComponentInstance);
         if(it != mGUIs.end())

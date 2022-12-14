@@ -2,7 +2,7 @@
 
 // Internal Includes
 #include "appguiwidget.h"
-#include "appguiitem.h"
+#include "appguiwindow.h"
 
 // External Includes
 #include <component.h>
@@ -13,37 +13,39 @@
 namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
-    class AppGUIService;
-    class AppGUIComponentInstance;
 
-    class NAPAPI AppGUIComponent : public Component
+    // forward declares
+    class AppGUIService;
+    class AppGUIWindowMenuComponentInstance;
+
+    class NAPAPI AppGUIWindowMenuComponent : public Component
     {
-        friend class AppGUIComponentInstance;
+        friend class AppGUIWindowMenuComponentInstance;
 
         RTTI_ENABLE(Component)
-        DECLARE_COMPONENT(AppGUIComponent, AppGUIComponentInstance)
+        DECLARE_COMPONENT(AppGUIWindowMenuComponent, AppGUIWindowMenuComponentInstance)
     public:
-        AppGUIComponent(AppGUIService& appGUIService);
+        AppGUIWindowMenuComponent(AppGUIService& appGUIService);
 
-        ~AppGUIComponent() = default;
+        virtual ~AppGUIWindowMenuComponent() = default;
 
         // properties
-        ResourcePtr<AppGUIMenuItemGroup> mMenuItems;
+        std::vector<ResourcePtr<AppGUIWindowGroup>> mWindowGroups;
     private:
         AppGUIService& mAppGUIService;
     };
 
 
-    class NAPAPI AppGUIComponentInstance : public ComponentInstance
+    class NAPAPI AppGUIWindowMenuComponentInstance : public ComponentInstance
     {
         friend class AppGUICache;
         friend class AppGUIService;
     RTTI_ENABLE(ComponentInstance)
     public:
-        AppGUIComponentInstance(EntityInstance& entity, Component& resource)
+        AppGUIWindowMenuComponentInstance(EntityInstance& entity, Component& resource)
             : nap::ComponentInstance(entity, resource) { }
 
-        virtual ~AppGUIComponentInstance() = default;
+        virtual ~AppGUIWindowMenuComponentInstance() = default;
 
         // Initialize the component
         bool init(utility::ErrorState& errorState) override;
@@ -53,11 +55,11 @@ namespace nap
         // Draws GUI, called from AppGUIService
         void draw(double deltaTime);
 
-        bool constructMenuRecursive(AppGUIMenuItemGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
+        bool constructMenuRecursive(AppGUIWindowGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState);
 
-        void handleWidgetGroup(AppGUIMenuItemGroup* group);
+        void handleWindowGroup(AppGUIWindowGroup* group);
 
-        void handleWindowWidget(AppGUIWindow* mWidget);
+        void handleWindow(AppGUIWindow* mWidget);
 
         std::vector<std::string> getOpenWindowIDs();
 
@@ -71,14 +73,14 @@ namespace nap
         RTTI_ENABLE(Resource)
     public:
         AppGUICache() = default;
-        AppGUICache(AppGUIComponentInstance& gui);
+        AppGUICache(AppGUIWindowMenuComponentInstance& gui);
 
         ~AppGUICache() = default;
 
-        bool isOpen(std::string widgetId);
+        bool isOpen(const std::string& windowID);
 
         std::vector<std::string> mOpenWidgets;
     };
 
-    using AppGUIComponentObjectCreator = rtti::ObjectCreator<AppGUIComponent, AppGUIService>;
+    using AppGUIComponentObjectCreator = rtti::ObjectCreator<AppGUIWindowMenuComponent, AppGUIService>;
 }

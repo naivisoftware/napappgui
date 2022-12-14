@@ -14,19 +14,12 @@ namespace nap
         AppGUIItem() = default;
         virtual ~AppGUIItem() = default;
 
-        virtual void setAppGUIService(AppGUIService& service);
+        virtual void draw(double deltaTime) = 0;
+
+        void setAppGUIService(AppGUIService& service);
 
         AppGUIService& getAppGUIService() const;
     protected:
         AppGUIService* mService;
-    };
-
-    class NAPAPI AppGUIMenuItem : public AppGUIItem
-    {
-        RTTI_ENABLE(AppGUIItem)
-    public:
-        // default constructor & destructor
-        AppGUIMenuItem() = default;
-        virtual ~AppGUIMenuItem() = default;
     };
 }

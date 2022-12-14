@@ -1,17 +1,17 @@
 
 // local includes
-#include "appgui.h"
+#include "appguiwindowmenucomponent.h"
 #include "appguiservice.h"
 
 // nap includes
 #include <entity.h>
 #include <imgui/imgui.h>
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIComponent)
-    RTTI_PROPERTY("Menu Items", &nap::AppGUIComponent::mMenuItems, nap::rtti::EPropertyMetaData::Default)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWindowMenuComponent)
+    RTTI_PROPERTY("Menu Items", &nap::AppGUIWindowMenuComponent::mWindowGroups, nap::rtti::EPropertyMetaData::Default)
 RTTI_END_CLASS
 
-RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIComponentInstance)
+RTTI_BEGIN_CLASS_NO_DEFAULT_CONSTRUCTOR(nap::AppGUIWindowMenuComponentInstance)
     RTTI_CONSTRUCTOR(nap::EntityInstance&, nap::Component&)
 RTTI_END_CLASS
 
@@ -23,34 +23,37 @@ RTTI_END_CLASS
 namespace nap
 {
     //////////////////////////////////////////////////////////////////////////
-    // AppGUIComponent
+    // AppGUIWindowMenuComponent
     //////////////////////////////////////////////////////////////////////////
 
-    AppGUIComponent::AppGUIComponent(AppGUIService& appGUIService) : mAppGUIService(appGUIService){}
+    AppGUIWindowMenuComponent::AppGUIWindowMenuComponent(AppGUIService& appGUIService) : mAppGUIService(appGUIService){}
 
     //////////////////////////////////////////////////////////////////////////
-    // AppGUIComponentInstance
+    // AppGUIWindowMenuComponentInstance
     //////////////////////////////////////////////////////////////////////////
 
-    bool AppGUIComponentInstance::init(utility::ErrorState &errorState)
+    bool AppGUIWindowMenuComponentInstance::init(utility::ErrorState &errorState)
     {
         // get resource
-        auto* resource = getComponent<AppGUIComponent>();
+        auto* resource = getComponent<AppGUIWindowMenuComponent>();
 
         // set app gui service pointer
         mAppGUIService = &resource->mAppGUIService;
 
         std::vector<std::string> group_ids;
-        if(!constructMenuRecursive(resource->mMenuItems.get(), group_ids, errorState))
-            return false;
+        for(auto& menu_item : resource->mWindowGroups)
+        {
+            if(!constructMenuRecursive(menu_item.get(), group_ids, errorState))
+                return false;
+        }
 
-        mAppGUIService->registerAppGUIComponentInstance(this);
+        mAppGUIService->registerAppGUIWindowMenuComponentInstance(this);
 
         return true;
     }
 
 
-    bool AppGUIComponentInstance::constructMenuRecursive(AppGUIMenuItemGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState)
+    bool AppGUIWindowMenuComponentInstance::constructMenuRecursive(AppGUIWindowGroup* group, std::vector<std::string>& group_ids, utility::ErrorState &errorState)
     {
         for(auto& member : group->mMembers)
         {
@@ -79,30 +82,37 @@ namespace nap
     }
 
 
-    void AppGUIComponentInstance::onDestroy()
+    void AppGUIWindowMenuComponentInstance::onDestroy()
     {
-        mAppGUIService->unregisterAppGUIComponentInstance(this);
+        mAppGUIService->unregisterAppGUIWindowMenuComponentInstance(this);
     }
 
 
-    void AppGUIComponentInstance::draw(double deltaTime)
+    void AppGUIWindowMenuComponentInstance::draw(double deltaTime)
     {
+        auto* resource = getComponent<AppGUIWindowMenuComponent>();
+
         ImGui::PushID(mID.c_str());
         ImGui::BeginMainMenuBar();
-        auto* resource = getComponent<AppGUIComponent>();
-        handleWidgetGroup(resource->mMenuItems.get());
+        for(auto& menu_item : resource->mWindowGroups)
+        {
+            handleWindowGroup(menu_item.get());
+        }
         ImGui::EndMainMenuBar();
 
         for(auto& pair : mOpenWindows)
         {
             if(pair.second)
+            {
                 pair.first->draw(deltaTime);
+                pair.second = !pair.first->getIsClosed();
+            }
         }
         ImGui::PopID();
     }
 
 
-    void AppGUIComponentInstance::handleWidgetGroup(AppGUIMenuItemGroup* group)
+    void AppGUIWindowMenuComponentInstance::handleWindowGroup(AppGUIWindowGroup* group)
     {
         ImGui::PushID(group->mID.c_str());
         if (ImGui::BeginMenu(group->mID.c_str()))
@@ -111,12 +121,12 @@ namespace nap
             {
                 if(member->get_type().is_derived_from<AppGUIWindow>())
                 {
-                    handleWindowWidget(static_cast<AppGUIWindow *>(member.get()));
+                    handleWindow(static_cast<AppGUIWindow *>(member.get()));
                 }
             }
             for(auto& child : group->mChildren)
             {
-                handleWidgetGroup(child.get());
+                handleWindowGroup(child.get());
             }
             ImGui::EndMenu();
         }
@@ -124,13 +134,13 @@ namespace nap
     }
 
 
-    void AppGUIComponentInstance::handleWindowWidget(AppGUIWindow* mWidget)
+    void AppGUIWindowMenuComponentInstance::handleWindow(AppGUIWindow* mWidget)
     {
-        ImGui::MenuItem(mWidget->mName.c_str(), nullptr, &mOpenWindows[mWidget]);
+        ImGui::MenuItem(mWidget->mTitle.c_str(), nullptr, &mOpenWindows[mWidget]);
     }
 
 
-    std::vector<std::string> AppGUIComponentInstance::getOpenWindowIDs()
+    std::vector<std::string> AppGUIWindowMenuComponentInstance::getOpenWindowIDs()
     {
         std::vector<std::string> ids;
         for(auto& pair : mOpenWindows)
@@ -145,17 +155,16 @@ namespace nap
     // AppGUICache
     //////////////////////////////////////////////////////////////////////////
 
-    AppGUICache::AppGUICache(AppGUIComponentInstance &gui)
+    AppGUICache::AppGUICache(AppGUIWindowMenuComponentInstance &gui)
     {
         mID = gui.mID;
-
         mOpenWidgets = gui.getOpenWindowIDs();
     }
 
 
-    bool AppGUICache::isOpen(std::string widgetId)
+    bool AppGUICache::isOpen(const std::string& windowID)
     {
-        auto it = std::find(mOpenWidgets.begin(), mOpenWidgets.end(), widgetId);
+        auto it = std::find(mOpenWidgets.begin(), mOpenWidgets.end(), windowID);
         return it != mOpenWidgets.end();
     }
 }
