@@ -2,7 +2,7 @@
     "Type": "nap::ModuleInfo", 
     "mID": "napappgui", 
     "RequiredModules": [
-    	"mod_napimgui"
+    	"napimgui"
     ], 
     "WindowsDllSearchPaths": []
 }
