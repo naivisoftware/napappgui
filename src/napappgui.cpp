@@ -4,4 +4,4 @@
 
 #include "utility/module.h"
 
-NAP_SERVICE_MODULE("mod_napappgui", "0.2.0", "nap::AppGUIService")
+NAP_SERVICE_MODULE("napappgui", "0.2.0", "nap::AppGUIService")
